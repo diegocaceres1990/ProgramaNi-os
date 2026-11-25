@@ -1,6 +1,6 @@
 // Cuaderno de 2º: 12 proyectos guiados. Rúbrica común: funciona, usa los bloques del módulo, se entiende la idea.
 import type { Lesson } from '../core/verify';
-import { cond, allSprites, scriptsOf, actions, has, inOrder, speedOf, simulate, pathTouches, isPainted, hasPhoto, flat, num, trigger } from '../core/verify';
+import { cond, allSprites, scriptsOf, actions, has, speedOf, simulate, pathTouches, isPainted, hasPhoto, flat, num, trigger } from '../core/verify';
 import type { Project, Sprite, Script } from '../core/state';
 import { b, project, scene, spr, kind, first, append, insert, addScript, addSprite, fakeSound, busySprites, PAINTED_BG, PHOTO_SPRITE } from './adventures';
 
@@ -369,7 +369,7 @@ export const GRADE2: Lesson[] = [
     },
     check: [
       cond('➡️ al pulsar la bandera el gato tiene que llegar a la columna 16 o más', (p) => kind(p, 'gato').some((s) => simulate(s).x >= 16)),
-      cond('⤴️ después de llegar, el gato tiene que saltar', (p) => kind(p, 'gato').some((s) => simulate(s).hops >= 1 && scriptsOf(s, 'onFlag').some((sc) => inOrder(sc, ['repeat', 'hop'])))),
+      cond('⤴️ después de llegar, el gato tiene que saltar', (p) => kind(p, 'gato').some((s) => simulate(s).hopXs.some((x) => x >= 16))),
       cond('🧹 no puede quedar ningún programa sin bloque amarillo', (p) => allSprites(p).every((s) => s.scripts.every((sc) => trigger(sc) !== null))),
     ],
   },

@@ -205,7 +205,7 @@ export const SCHOOL: Lesson[] = [
     check: [
       cond('🔁 usa «repetir» con el número 6', (p) => kind(p, 'pez').some((s) => scriptsOf(s).some((sc) => findRepeat(sc, 6)))),
       cond('➡️ dentro del bucle tiene que haber una flecha a la derecha', (p) => kind(p, 'pez').some((s) => scriptsOf(s).some((sc) => findRepeat(sc, 6, 'right')))),
-      cond('🐟 el pez tiene que acabar al menos 6 casillas más a la derecha', (p) => kind(p, 'pez').some((s) => simulate(s).x >= s.x + 6)),
+      cond('🐟 al pulsar la bandera, el pez tiene que acabar al menos 6 casillas más a la derecha', (p) => kind(p, 'pez').some((s) => simulate(s).x >= s.x + 6)),
     ],
   },
   {

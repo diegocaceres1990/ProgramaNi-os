@@ -150,12 +150,12 @@ export function speedOf(sp: Sprite): string | null {
 
 export interface SimResult {
   x: number; y: number; size: number; visible: boolean; dir: number;
-  hops: number; path: { x: number; y: number; size: number }[]; says: string[];
+  hops: number; hopXs: number[]; path: { x: number; y: number; size: number }[]; says: string[];
 }
 
 /** Simula los scripts de bandera de un personaje, uno detrás de otro, sin tiempo. */
 export function simulate(sp: Sprite): SimResult {
-  const st: SimResult = { x: sp.x, y: sp.y, size: sp.size, visible: sp.visible, dir: sp.dir, hops: 0, path: [], says: [] };
+  const st: SimResult = { x: sp.x, y: sp.y, size: sp.size, visible: sp.visible, dir: sp.dir, hops: 0, hopXs: [], path: [], says: [] };
   st.path.push({ x: st.x, y: st.y, size: st.size });
   let budget = 5000;
   const run = (blocks: Block[]): boolean => {
@@ -177,7 +177,7 @@ export function simulate(sp: Sprite): SimResult {
         case 'home': st.x = sp.x; st.y = sp.y; st.dir = sp.dir; st.path.push({ x: st.x, y: st.y, size: st.size }); break;
         case 'turnR': st.dir += 30 * num(b, 1); break;
         case 'turnL': st.dir -= 30 * num(b, 1); break;
-        case 'hop': st.hops++; break;
+        case 'hop': st.hops++; st.hopXs.push(st.x); break;
         case 'grow': st.size = Math.min(400, st.size + 10 * num(b, 2)); break;
         case 'shrink': st.size = Math.max(20, st.size - 10 * num(b, 2)); break;
         case 'resetSize': st.size = 100; break;
@@ -233,7 +233,28 @@ const safe = (c: Cond, p: Project): boolean => {
  * - Resto: usa algún bloque que la lección introduce (o 2 colores si no introduce ninguno)
  *   y la idea se entiende si se cumplen las comprobaciones del reto.
  */
-export interface EvalTarget { check: Cond[]; rubric?: boolean; introduces?: BlockType[]; free?: boolean }
+export interface EvalTarget { check: Cond[]; rubric?: boolean; introduces?: BlockType[]; free?: boolean; start?: () => Project }
+
+/** Claves «escena:nombre» de los personajes que la lección ya trae colocados. */
+export function startKeys(start: Project): Set<string> {
+  return new Set(start.scenes.flatMap((s, i) => s.sprites.map((sp) => `${i}:${sp.name}`)));
+}
+
+/** Devuelve a su sitio inicial a los personajes de partida: arrastrarlos no puede superar un reto. */
+function pinStart(lesson: EvalTarget, p: Project): Project {
+  if (!lesson.start) return p;
+  const start = lesson.start();
+  return {
+    ...p,
+    scenes: p.scenes.map((sc, i) => ({
+      ...sc,
+      sprites: sc.sprites.map((sp) => {
+        const orig = start.scenes[i]?.sprites.find((o) => o.name === sp.name);
+        return orig ? { ...sp, x: orig.x, y: orig.y } : sp;
+      }),
+    })),
+  };
+}
 
 export function rubric(p: Project, lesson: EvalTarget): RubricItem[] {
   const works = allSprites(p).some((sp) => scriptsOf(sp).some((sc) => actions(sc).length > 0));
@@ -247,17 +268,20 @@ export function rubric(p: Project, lesson: EvalTarget): RubricItem[] {
   }
   const used = blockTypes(p);
   const intro = lesson.introduces ?? [];
-  const blocksOk = intro.length ? intro.some((t) => used.has(t)) : categoriesUsed(p).size >= 2;
+  const solved = lesson.check.every((c) => safe(c, p));
+  // si el reto se cumple con otros bloques válidos, también cuenta
+  const blocksOk = intro.length ? solved || intro.some((t) => used.has(t)) : categoriesUsed(p).size >= 2;
   return [
     { label: '⚙️ funciona: hay un programa que empieza con un bloque amarillo', ok: works },
     { label: intro.length ? '🧩 usa los bloques nuevos de esta lección' : '🧩 usa bloques de al menos 2 colores', ok: blocksOk },
-    { label: '💡 se entiende la idea: el reto se cumple', ok: lesson.check.every((c) => safe(c, p)) },
+    { label: '💡 se entiende la idea: el reto se cumple', ok: solved },
   ];
 }
 
 // ---------------------------------------------------------------- evaluación
 
-export function evaluate(lesson: EvalTarget, p: Project): CheckResult {
+export function evaluate(lesson: EvalTarget, project: Project): CheckResult {
+  const p = pinStart(lesson, project);
   const rb = lesson.rubric ? rubric(p, lesson) : undefined;
   for (const c of lesson.check) {
     let ok = false;

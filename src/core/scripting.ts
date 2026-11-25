@@ -251,9 +251,11 @@ export class CodeArea {
     this.drag = { chain, fromCode, ghost, offX, offY, targets: this.collectTargets(chain, excluded), current: null, srcEls };
     document.body.classList.add('dragging');
     this.moveGhost(e.clientX, e.clientY);
-    const move = (ev: PointerEvent) => this.moveGhost(ev.clientX, ev.clientY);
-    const up = (ev: PointerEvent) => { cleanup(); this.drop(ev.clientX, ev.clientY); };
-    const cancel = () => { cleanup(); this.endDrag(); };
+    // solo manda el dedo que empezó el arrastre
+    const own = (ev: PointerEvent) => ev.pointerId === e.pointerId;
+    const move = (ev: PointerEvent) => { if (own(ev)) this.moveGhost(ev.clientX, ev.clientY); };
+    const up = (ev: PointerEvent) => { if (own(ev)) { cleanup(); this.drop(ev.clientX, ev.clientY); } };
+    const cancel = (ev: PointerEvent) => { if (own(ev)) { cleanup(); this.endDrag(); } };
     const cleanup = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);

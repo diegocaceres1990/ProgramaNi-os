@@ -1,7 +1,7 @@
 // Editor de pintura a pantalla completa (raster sobre canvas, exporta SVG que envuelve un PNG).
 import { svgImage } from './sprites';
 import * as audio from './audio';
-import { fullscreenLayer, toast } from '../ui/dialog';
+import { fullscreenLayer, toast, confirmBox } from '../ui/dialog';
 
 export type PaintKind = 'sprite' | 'bg';
 type Tool = 'pencil' | 'circle' | 'rect' | 'triangle' | 'bucket' | 'scissors' | 'stamp' | 'move' | 'rotate';
@@ -151,7 +151,8 @@ export function openPaint(kind: PaintKind, svg: string | null, name = ''): Promi
       if (svg) {
         const img = await loadImage(svg);
         if (img.naturalWidth) {
-          if (kind === 'sprite') ctx.drawImage(img, W * 0.1, H * 0.1, W * 0.8, H * 0.8);
+          // los dibujos propios ya ocupan el lienzo entero; solo los de la biblioteca llevan margen
+          if (kind === 'sprite' && !svg.includes('data-mano="1"')) ctx.drawImage(img, W * 0.1, H * 0.1, W * 0.8, H * 0.8);
           else ctx.drawImage(img, 0, 0, W, H);
         }
       }
@@ -384,11 +385,20 @@ export function openPaint(kind: PaintKind, svg: string | null, name = ''): Promi
       b.addEventListener('click', () => {
         audio.tap();
         switch (b.dataset.act) {
-          case 'cancel': cleanup(); resolve(null); break;
+          case 'cancel':
+            if (!undo.length) { cleanup(); resolve(null); break; }
+            void confirmBox('¿salir sin guardar el dibujo?', '🗑️').then((yes) => { if (yes) { cleanup(); resolve(null); } });
+            break;
           case 'undo': { const d = undo.pop(); if (d) ctx.putImageData(d, 0, 0); break; }
           case 'grid': grid = !grid; wrap.classList.toggle('grid', grid); b.classList.toggle('sel', grid); break;
           case 'camera': void camera(); break;
           case 'save': {
+            // sin ningún cambio no se marca como dibujo propio
+            if (!undo.length) {
+              cleanup();
+              resolve(svg ? { svg, name: (nameInput?.value.trim() || name || 'mi dibujo').slice(0, 20) } : null);
+              break;
+            }
             const png = cv.toDataURL('image/png');
             const vb = kind === 'sprite' ? '0 0 100 100' : '0 0 480 360';
             const [vw, vh] = kind === 'sprite' ? [100, 100] : [480, 360];

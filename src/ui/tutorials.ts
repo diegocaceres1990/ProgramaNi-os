@@ -2,7 +2,9 @@
 import type { GuideStep, Tutorial } from '../core/verify';
 import { evaluate } from '../core/verify';
 import { store } from '../core/state';
+import type { BlockType } from '../core/state';
 import * as audio from '../core/audio';
+import { def } from '../core/blocks';
 import { isTutorialSeen, markTutorialSeen } from '../core/progress';
 import { TUTORIALS } from '../content/tutorials';
 import { openEditor } from './toolbar';
@@ -28,8 +30,17 @@ export function runGuide(steps: GuideStep[], onFinish: (skipped: boolean) => voi
   let i = 0;
   let closed = false;
 
+  /** Abre la pestaña de la paleta que contiene lo que señala el paso. */
+  const reveal = (sel: string) => {
+    if (document.querySelector(sel)) return;
+    const type = /\.palette-block\[data-type="(\w+)"\]/.exec(sel)?.[1];
+    const cat = type ? def(type as BlockType).cat : sel === '#btn-record' ? 'sound' : null;
+    if (cat) document.querySelector<HTMLElement>(`.palette-cat[data-cat="${cat}"]`)?.click();
+  };
+
   const render = () => {
     const st = steps[i];
+    reveal(st.sel);
     bubble.innerHTML = `<span class="gb-icon">${st.icon ?? '👉'}</span><span class="gb-text"></span>
       <span class="gb-step">${i + 1}/${steps.length}</span>`;
     (bubble.querySelector('.gb-text') as HTMLElement).textContent = st.text;
@@ -150,6 +161,7 @@ export function startTutorial(app: HTMLElement, t: Tutorial, onExit: () => void)
   let done = false;
   openEditor(app, p, {
     lockName: true,
+    helpInPlace: true,
     onHome: () => { guide?.close(); onExit(); },
     onHelp: () => { guide?.close(); guide = runGuide(t.guide, () => undefined); },
     setup: (ctx) => {

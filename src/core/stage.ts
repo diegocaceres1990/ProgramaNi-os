@@ -14,6 +14,8 @@ export class Stage {
   private raf = 0;
   private cssW = STAGE_W;
   private dragging: { kind: 'sprite' | 'text'; id: string | number; moved: boolean; sx: number; sy: number; ox: number; oy: number } | null = null;
+  /** Personajes («escena:nombre») que se pueden tocar pero no arrastrar (lecciones). */
+  locked = new Set<string>();
   /** Llamado en cada fotograma tras actualizar el motor. */
   onFrame: (() => void) | null = null;
   /** Se toca un texto del escenario (sin arrastrar). */
@@ -250,6 +252,10 @@ export class Stage {
   private move(e: PointerEvent): void {
     const d = this.dragging;
     if (!d) return;
+    if (d.kind === 'sprite') {
+      const sp = store.scene.sprites.find((s) => s.id === d.id);
+      if (sp && this.locked.has(`${store.sceneIndex}:${sp.name}`)) return;
+    }
     const rc = this.canvas.getBoundingClientRect();
     const cellPx = rc.width / GRID_W;
     const dx = (e.clientX - d.sx) / cellPx, dy = (e.clientY - d.sy) / cellPx;

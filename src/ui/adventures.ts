@@ -1,7 +1,7 @@
 // Itinerarios (aventuras, escuela, cuadernos): mapa de lecciones, pantalla de objetivo,
 // práctica guiada sobre el editor real, comprobación del reto y estrellas.
 import type { Lesson } from '../core/verify';
-import { evaluate } from '../core/verify';
+import { evaluate, startKeys } from '../core/verify';
 import { store } from '../core/state';
 import * as db from '../core/db';
 import * as audio from '../core/audio';
@@ -141,6 +141,7 @@ export async function startLesson(app: HTMLElement, l: Lesson, nav: TrackNav): P
     onHome: () => { guide?.close(); showTrack(app, l.track, nav); },
     onHelp: () => { guide?.close(); nav.tutorials(); },
     setup: (ctx) => {
+      ctx.stage.locked = startKeys(l.start());
       const bar = document.createElement('div');
       bar.className = 'lesson-bar';
       bar.innerHTML = `<span class="lb-icon">🎯</span><span class="lb-text"></span>

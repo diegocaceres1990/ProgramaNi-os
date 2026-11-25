@@ -19,4 +19,7 @@ Decisiones tomadas ante ambigüedades del encargo (sin preguntar, según el cont
 15. **Comprobación de retos.** Solo se evalúa el estado del proyecto (bloques, valores, escenas, sprites, sonidos, fondos). Las posiciones finales se obtienen simulando de forma determinista los scripts de bandera (sin tiempo ni clics ni registro de ejecución). Cada lección declara una solución de referencia (≤ 12 bloques) y los bloques que introduce; una autoprueba comprueba que la solución pasa, que el estado inicial no pasa, que no se exigen bloques aún no enseñados y que no hay textos de reto repetidos.
 16. **Puerta de padres.** Multiplicación de dos cifras del 6 al 9 con respuesta elegida entre 4 botones grandes.
 17. **Node.js.** No estaba instalado; se usó Node portable en `%LOCALAPPDATA%\node-portable` (añadido al PATH de usuario).
+19. **Límite de 12 bloques.** Se cuenta lo que la niña tiene que añadir; los bloques que ya trae el estado inicial no cuentan.
+20. **Texto de los bloques.** El SPEC pide 16 px; los nombres largos de los bloques sin valor usan 13 px para caber en 120x56.
+21. **Personajes de partida en lecciones.** Se pueden tocar pero no arrastrar, y los retos se evalúan desde su posición inicial.
 18. **Rúbrica de proyectos libres.** Se evalúa sobre el estado del proyecto: funciona (hay al menos un script que empieza con un bloque amarillo y tiene acciones), usa bloques del módulo (≥ 3 categorías distintas), se entiende la idea (hay texto en el escenario o bloques "decir").

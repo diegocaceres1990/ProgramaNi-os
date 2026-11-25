@@ -161,3 +161,25 @@ Resultado: ningún bloque queda sin lección, así que no se quita ninguno de la
 - Todo compila (`npx tsc --noEmit` y `npm run build` limpios).
 - Sin probar con hardware real: micrófono y cámara físicos (se probaron con los dispositivos simulados de Chrome) y un iPad físico (se probó con emulación de Chrome).
 - Scripts de prueba (Node + Chrome por DevTools Protocol, sin dependencias): `engine-test.mjs`, `gate-f4.mjs`, `lessons-gate.mjs`, `audit.mjs` y `selftest.mjs`, en el scratchpad temporal de la sesión. No están en el repo porque la lista de archivos del SPEC es cerrada.
+
+## Revisión independiente (agente) y correcciones — sin commit todavía
+Hallazgos verificados y corregidos:
+- Motor: dos scripts que mueven a la vez al mismo personaje se pisaban. Ahora se suman incrementos, con ajuste exacto al final de cada movimiento, e «ir a casa» cancela los movimientos en curso (el reinicio de g2-3 ya se ve).
+- Retos: se podían superar arrastrando al personaje. Ahora los personajes de partida de una lección no se arrastran y verify evalúa desde su posición inicial.
+- Rúbrica: rechazaba soluciones válidas (g1-4 con ↻, g1-6 con «arriba»). Ahora acepta si el reto se cumple.
+- g2-11: aceptaba solo un tipo de arreglo. Ahora solo exige que el gato salte después de llegar a x ≥ 16.
+- a5, a11 y a12: las comprobaciones eran demasiado laxas. a3 rechaza «derecha 0». a7 y e6 dicen en la pista que tiene que ser con la bandera.
+- Botón ❓: ahora cierra el editor (antes el motor y el autoguardado seguían vivos).
+- Editor de pintura: ya no encoge los dibujos propios al reabrirlos; ✕ pide confirmación si hay trazos; ✓ sin cambios no marca el dibujo como hecho a mano.
+- Guía: abre la pestaña de la paleta del bloque que señala.
+- «Ir a página» a una página que no existe ya no reinicia la página en bucle.
+- La reproducción de sonido tiene un tope de seguridad de 12 s.
+- El arrastre solo responde al dedo que lo empezó.
+- DECISIONES 19-21: límite de 12 bloques (se cuentan los añadidos), texto de 13 px en bloques con nombre largo, personajes de partida fijos.
+Sin corregir (menores): tamaño de la pila de deshacer con fotos, versión fija de la caché del SW.
+Regresión: motor 10/10 · autoprueba 44/44 · portón F4 15/15 · interfaz de lecciones 13/13.
+
+## Uso diario en Windows
+- Acceso directo en el escritorio «aprende jugando» → wscript lanzar.vbs. Arranca un servidor local oculto (Node, sin dependencias) en http://127.0.0.1:4747 y abre Chrome en modo app.
+- Copia de la app en %LOCALAPPDATA%\aprende-jugando\app. Para actualizarla tras cambiar el código: `npm run build` y volver a copiar dist/ ahí.
+- Prueba (Chrome headless contra el servidor instalado): 4/4 → responde, SW activo, contexto seguro (micro y cámara permitidos), y sigue abriendo con el servidor apagado.

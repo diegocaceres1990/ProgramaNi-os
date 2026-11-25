@@ -28,6 +28,8 @@ export interface EditorCtx {
 export interface EditorOpts {
   onHome(): void;
   onHelp(): void;
+  /** La ayuda se muestra sobre el propio editor (tutoriales): no hay que cerrarlo. */
+  helpInPlace?: boolean;
   /** Permite a lecciones y tutoriales añadir su interfaz. */
   setup?: (ctx: EditorCtx) => void;
   /** Ocultar el nombre editable (lecciones). */
@@ -108,7 +110,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>('#' + id)!;
   store.load(project);
 
-  const engine = new Engine(() => store.scene, () => store.sceneIndex);
+  const engine = new Engine(() => store.scene, () => store.sceneIndex, () => store.project.scenes.length);
   const stage = new Stage($<HTMLCanvasElement>('stage'), engine);
   const code = new CodeArea($('code-area'));
   let paletteCat: Category = 'start';
@@ -375,7 +377,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
   $('btn-grid').addEventListener('click', () => { audio.tap(); stage.setGrid(!stage.showGrid); renderGrid(); });
   $('btn-mute').addEventListener('click', () => { audio.setMuted(!audio.isMuted()); audio.tap(); renderMute(); });
   $('btn-home').addEventListener('click', async () => { audio.tap(); await save(); ctx.close(); opts.onHome(); });
-  $('btn-help').addEventListener('click', async () => { audio.tap(); await save(); opts.onHelp(); });
+  $('btn-help').addEventListener('click', async () => { audio.tap(); await save(); if (!opts.helpInPlace) ctx.close(); opts.onHelp(); });
   $('btn-paint').addEventListener('click', () => { audio.tap(); void paintSprite(); });
   $('btn-undo').addEventListener('click', () => { audio.tap(); engine.stop(); store.undo(); });
   $('btn-redo').addEventListener('click', () => { audio.tap(); engine.stop(); store.redo(); });

@@ -200,7 +200,7 @@ export const ADVENTURES: Lesson[] = [
     check: [
       cond('🧩 la pelota necesita un programa de 3 bloques: 🚩, un movimiento y ⏹️', (p) =>
         kind(p, 'pelota').some((sp) => sp.scripts.some((sc) => sc.blocks.length === 3 && sc.blocks[0].type === 'onFlag' &&
-          [...MOVES, ...TURNS, 'hop', 'home'].includes(sc.blocks[1].type) && sc.blocks[2].type === 'end'))),
+          [...MOVES, ...TURNS, 'hop', 'home'].includes(sc.blocks[1].type) && (!MOVES.includes(sc.blocks[1].type) || num(sc.blocks[1], 1) > 0) && sc.blocks[2].type === 'end'))),
     ],
   },
   {
@@ -253,8 +253,8 @@ export const ADVENTURES: Lesson[] = [
       insert(first(p, 'cohete'), 1, b('speed', 'rapida'));
     },
     check: [
-      cond('🐌 pon «velocidad lenta» antes de los movimientos de un personaje', (p) => allSprites(p).some((s) => speedOf(s) === 'lenta')),
-      cond('🚀 y «velocidad rápida» en otro personaje', (p) => allSprites(p).some((s) => speedOf(s) === 'rapida')),
+      cond('🐌 pon «velocidad lenta» antes de los movimientos del caracol', (p) => kind(p, 'caracol').some((s) => speedOf(s) === 'lenta')),
+      cond('🚀 y «velocidad rápida» en el cohete', (p) => kind(p, 'cohete').some((s) => speedOf(s) === 'rapida')),
     ],
   },
   {
@@ -304,7 +304,7 @@ export const ADVENTURES: Lesson[] = [
     check: [
       cond('💬 la niña necesita dos bloques «decir»', (p) => kind(p, 'nina').some((s) => scriptsOf(s).some((sc) => flat(sc.blocks).filter((x) => x.type === 'say').length >= 2))),
       cond('⏳ pon «esperar» entre las dos burbujas', (p) => kind(p, 'nina').some((s) => scriptsOf(s).some((sc) => inOrder(sc, ['say', 'wait', 'say'])))),
-      cond('🗨️ las dos frases tienen que ser distintas', (p) => kind(p, 'nina').some((s) => new Set(simulate(s).says).size >= 2)),
+      cond('🗨️ al pulsar la bandera tienen que oírse dos frases distintas', (p) => kind(p, 'nina').some((s) => new Set(simulate(s).says).size >= 2)),
     ],
   },
   {
@@ -408,7 +408,7 @@ export const ADVENTURES: Lesson[] = [
     ])]),
     solution: (p) => addScript(first(p, 'perro'), [b('onBump', ''), b('say', '¡ay!'), b('end')]),
     check: [
-      cond('💥 el perro necesita un programa que empiece con «al chocar»', (p) => kind(p, 'perro').some((s) => scriptsOf(s, 'onBump').length > 0)),
+      cond('💥 el perro necesita un programa que empiece con «al chocar»', (p) => kind(p, 'perro').some((s) => scriptsOf(s, 'onBump').some((sc) => sc.blocks[0].value !== s.id))),
       cond('💬 en ese programa el perro dice algo y acaba con ⏹️ fin', (p) =>
         kind(p, 'perro').some((s) => scriptsOf(s, 'onBump').some((sc) => has(sc, 'say') && sc.blocks[sc.blocks.length - 1].type === 'end'))),
       cond('🐱 el gato tiene que llegar a tocar al perro', (p) => {
@@ -447,8 +447,10 @@ export const ADVENTURES: Lesson[] = [
         const sent = new Set(kind(p, 'estrella').flatMap((s) => scriptsOf(s, 'onTap').flatMap((sc) => flat(sc.blocks).filter((x) => x.type === 'send').map((x) => num(x, 1)))));
         return allSprites(p).some((s) => !kind(p, 'estrella').includes(s) && scriptsOf(s, 'onMessage').some((sc) => sent.has(num(sc.blocks[0], 1)) && has(sc, 'say')));
       }),
-      cond('⏹️ la respuesta tiene que terminar con fin', (p) =>
-        allSprites(p).some((s) => scriptsOf(s, 'onMessage').some((sc) => has(sc, 'say') && sc.blocks[sc.blocks.length - 1].type === 'end'))),
+      cond('⏹️ la respuesta tiene que terminar con fin', (p) => {
+        const sent = new Set(kind(p, 'estrella').flatMap((s) => scriptsOf(s, 'onTap').flatMap((sc) => flat(sc.blocks).filter((x) => x.type === 'send').map((x) => num(x, 1)))));
+        return allSprites(p).some((s) => !kind(p, 'estrella').includes(s) && scriptsOf(s, 'onMessage').some((sc) => sent.has(num(sc.blocks[0], 1)) && has(sc, 'say') && sc.blocks[sc.blocks.length - 1].type === 'end'));
+      }),
     ],
   },
 ];

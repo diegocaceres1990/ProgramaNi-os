@@ -10,6 +10,8 @@ export const SPRITE_BASE = 64 / 24;
 export interface Runtime {
   x: number; y: number; dir: number; size: number; visible: boolean;
   alpha: number; hop: number; speed: number; say: string | null;
+  /** Cambia con «ir a casa»: los movimientos que estaban en curso dejan de aplicarse. */
+  epoch: number;
 }
 
 export type EventKind =
@@ -52,7 +54,11 @@ export class Engine {
   /** Se llama cuando un script termina o el motor se detiene. */
   onIdle: (() => void) | null = null;
 
-  constructor(private getScene: () => Scene, private getSceneIndex: () => number) {}
+  constructor(
+    private getScene: () => Scene,
+    private getSceneIndex: () => number,
+    private pageCount: () => number = () => 4,
+  ) {}
 
   // ---------- estado de los personajes ----------
 
@@ -68,7 +74,7 @@ export class Engine {
   private fresh(sp: Sprite): Runtime {
     return {
       x: sp.x, y: sp.y, dir: sp.dir, size: sp.size, visible: sp.visible,
-      alpha: sp.visible ? 1 : 0, hop: 0, speed: 1, say: null,
+      alpha: sp.visible ? 1 : 0, hop: 0, speed: 1, say: null, epoch: 0,
     };
   }
 
@@ -311,16 +317,35 @@ export class Engine {
         const x0 = r.x, y0 = r.y;
         const x1 = clamp(x0 + dx, 0, GRID_W), y1 = clamp(y0 + dy, 0, GRID_H);
         const dist = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 0.2);
-        yield this.tween(dist * step, (p) => { r.x = x0 + (x1 - x0) * p; r.y = y0 + (y1 - y0) * p; });
+        // se suman incrementos para que varios scripts puedan mover al mismo personaje a la vez
+        const epoch = r.epoch;
+        let done = 0;
+        yield this.tween(dist * step, (p) => {
+          if (r.epoch !== epoch) return;
+          const d = p - done;
+          done = p;
+          r.x = clamp(r.x + (x1 - x0) * d, 0, GRID_W);
+          r.y = clamp(r.y + (y1 - y0) * d, 0, GRID_H);
+        });
+        if (r.epoch === epoch) {
+          // se aplica lo que falte por redondeo de coma flotante y se ajusta a la rejilla
+          r.x = clamp(Math.round((r.x + (x1 - x0) * (1 - done)) * 1e6) / 1e6, 0, GRID_W);
+          r.y = clamp(Math.round((r.y + (y1 - y0) * (1 - done)) * 1e6) / 1e6, 0, GRID_H);
+        }
         this.emit('move', sp, `${r.x},${r.y}`, b.type);
         return false;
       }
       case 'turnR': case 'turnL': {
         const n = clamp(num(b.value, 1), -24, 24);
-        const d0 = r.dir;
-        const d1 = d0 + (b.type === 'turnR' ? 30 : -30) * n;
-        yield this.tween(Math.max(0.15, Math.abs(n) * step * 0.6), (p) => { r.dir = d0 + (d1 - d0) * p; });
-        r.dir = ((d1 % 360) + 360) % 360;
+        const delta = (b.type === 'turnR' ? 30 : -30) * n;
+        const epoch = r.epoch;
+        let done = 0;
+        yield this.tween(Math.max(0.15, Math.abs(n) * step * 0.6), (p) => {
+          if (r.epoch !== epoch) return;
+          r.dir += delta * (p - done);
+          done = p;
+        });
+        r.dir = ((Math.round(r.dir * 1e6) / 1e6 % 360) + 360) % 360;
         this.emit('turn', sp, r.dir);
         return false;
       }
@@ -333,7 +358,9 @@ export class Engine {
       }
       case 'home': {
         const x0 = r.x, y0 = r.y, d0 = r.dir;
+        const epoch = ++r.epoch;
         yield this.tween(0.3, (p) => {
+          if (r.epoch !== epoch) return;
           r.x = x0 + (sp.x - x0) * p; r.y = y0 + (sp.y - y0) * p; r.dir = d0 + (sp.dir - d0) * p;
         });
         r.hop = 0;
@@ -377,7 +404,9 @@ export class Engine {
         if (!blob) { yield this.tween(0.2, () => undefined); return false; }
         let finished = false;
         void audio.playBlob(blob).then(() => { finished = true; });
-        yield { dur: 0, el: 0, cond: () => finished };
+        // tope de seguridad: una grabación dura 10 s como mucho
+        const limit = this.time + 12;
+        yield { dur: 0, el: 0, cond: () => finished || this.time > limit };
         return false;
       }
       case 'wait': {
@@ -415,6 +444,7 @@ export class Engine {
         return true;
       case 'goPage': {
         const n = clamp(Math.round(num(b.value, 1)), 1, 4) - 1;
+        if (n >= this.pageCount()) return true; // la página no existe: el script termina sin reiniciar nada
         this.pendingPage = n;
         yield this.frame();
         return true;
