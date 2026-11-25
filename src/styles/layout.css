@@ -1,0 +1,234 @@
+/* ---------- editor ---------- */
+.editor {
+  height: 100%;
+  display: flex; flex-direction: column;
+}
+
+.topbar {
+  height: 48px; flex: 0 0 48px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 8px;
+  background: #fff;
+  border-bottom: 3px solid var(--soft);
+  z-index: 5;
+}
+.tb-btn {
+  min-width: var(--touch); height: 44px; border-radius: 12px;
+  font-size: 26px; display: inline-flex; align-items: center; justify-content: center;
+  transition: transform 0.08s, background 0.15s;
+}
+.tb-btn:active { transform: scale(0.92); background: #EEF2F8; }
+.tb-btn.flag { background: #E6F7E8; }
+.tb-btn.flag.running { animation: pulse 0.9s infinite; }
+.tb-btn.stop { background: #FFE8E8; }
+.tb-btn.sel { background: #DDEBFF; }
+.tb-btn.help { background: #FFF4CC; }
+.tb-gap { flex: 1; }
+.proj-name {
+  font-size: 18px; font-weight: 800; padding: 6px 14px; border-radius: 12px;
+  max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: #F3F6FB; height: 40px;
+}
+.proj-name.locked { pointer-events: none; background: transparent; }
+@keyframes pulse { 50% { transform: scale(1.08); background: #C7F0CB; } }
+
+.lesson-slot:empty { display: none; }
+
+.mid {
+  flex: 0 0 auto;
+  display: flex; align-items: stretch; justify-content: space-between;
+  gap: 8px; padding: 6px 8px;
+  min-height: 0;
+}
+
+.sprite-col, .scene-col {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  overflow-y: auto; overflow-x: hidden;
+  touch-action: pan-y;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+.sprite-col { flex: 0 0 72px; width: 72px; }
+.scene-col { flex: 0 0 56px; width: 56px; }
+.sprite-col::-webkit-scrollbar, .scene-col::-webkit-scrollbar { display: none; }
+
+.sprite-thumb, .scene-thumb {
+  position: relative;
+  background: #fff; border-radius: 14px;
+  border: 3px solid transparent;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  flex: 0 0 auto;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+}
+.sprite-thumb { width: 64px; height: 72px; display: flex; flex-direction: column; align-items: center; padding: 3px; }
+.sprite-thumb img { width: 46px; height: 46px; object-fit: contain; pointer-events: none; }
+.sprite-thumb .st-name { font-size: 11px; font-weight: 800; max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sprite-thumb.active, .scene-thumb.active { border-color: var(--c-motion); box-shadow: 0 0 0 3px rgba(76,151,255,.25); }
+.sprite-thumb.pressing, .scene-thumb.pressing { transform: scale(0.9); transition: transform 0.6s; }
+.sprite-thumb.deleting, .scene-thumb.deleting { animation: wobble 0.3s infinite; }
+@keyframes wobble { 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+
+.scene-thumb { width: 52px; height: 56px; overflow: hidden; }
+.scene-thumb img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.scene-thumb .sc-num {
+  position: absolute; left: 2px; bottom: 2px;
+  background: rgba(255,255,255,.9); border-radius: 8px; padding: 0 6px;
+  font-size: 14px; font-weight: 900;
+}
+
+.del-x {
+  position: absolute; top: -8px; right: -8px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--c-end); color: #fff; font-size: 18px; font-weight: 900;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  z-index: 2;
+}
+.del-x::before { content: ''; position: absolute; inset: -12px; } /* área táctil ≥ 56 px */
+
+.add-btn {
+  flex: 0 0 auto;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #fff; color: var(--ink);
+  font-size: 34px; font-weight: 900;
+  border-bottom: 4px solid #c9d2e0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+.add-btn.blue { background: var(--c-motion); color: #fff; border-bottom-color: var(--c-motion-d); }
+.add-btn:active { transform: scale(0.92); }
+
+.stage-wrap {
+  flex: 1 1 auto;
+  display: flex; align-items: flex-start; justify-content: center;
+  min-width: 0;
+}
+#stage {
+  display: block;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  touch-action: none;
+}
+
+.bottom {
+  flex: 1 1 auto;
+  display: flex; gap: 8px; padding: 0 8px 8px;
+  min-height: 190px;
+}
+
+.palette {
+  flex: 0 0 200px; width: 200px;
+  background: #fff; border-radius: var(--radius);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,.1);
+}
+.palette-tabs {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 2px; padding: 4px;
+  flex: 0 0 auto;
+}
+.palette-cat {
+  height: 40px; border-radius: 10px; font-size: 18px;
+  border-bottom: 4px solid transparent;
+  opacity: 0.55;
+}
+.palette-cat.sel { opacity: 1; transform: translateY(-2px); box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.palette-list {
+  flex: 1 1 auto; overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 6px 4px 12px;
+  touch-action: pan-y;
+}
+
+.rec-btn {
+  width: 120px; height: 56px; border-radius: 12px;
+  background: #fff; border: 3px dashed var(--c-sound);
+  font-size: 30px;
+}
+
+.code-wrap {
+  flex: 1 1 auto; min-width: 0;
+  background: #fff; border-radius: var(--radius);
+  display: flex; flex-direction: column;
+  box-shadow: 0 1px 6px rgba(0,0,0,.1);
+  position: relative;
+}
+.code-tools {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-bottom: 2px solid #EEF2F8;
+}
+.code-sprite { width: 40px; height: 40px; object-fit: contain; }
+.ct-btn {
+  min-width: var(--touch); height: 44px; border-radius: 12px; font-size: 24px; font-weight: 900;
+  background: #F3F6FB;
+}
+.ct-btn:active { transform: scale(0.92); }
+
+#code-area, .code-area {
+  flex: 1 1 auto; min-height: 0;
+  overflow: auto;
+  position: relative;
+  touch-action: pan-x pan-y;
+  background-image: radial-gradient(#E3E9F3 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.code-inner {
+  min-width: 100%; width: max-content;
+  padding: 16px 24px 40px;
+  display: flex; flex-direction: column; gap: 18px; align-items: flex-start;
+}
+.code-empty { font-size: 48px; opacity: 0.35; display: flex; gap: 14px; align-items: center; padding: 20px; }
+.arrow-hint { animation: nudge 1s infinite; }
+@keyframes nudge { 50% { transform: translateX(-10px); } }
+
+.bulb {
+  position: absolute; right: 12px; bottom: 12px;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: #FFF4CC; font-size: 36px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.2);
+  display: none;
+  animation: glow 1s infinite;
+}
+.bulb.show { display: block; }
+@keyframes glow { 50% { box-shadow: 0 0 0 10px rgba(255,210,63,.35); } }
+
+/* ---------- grabadora ---------- */
+.recorder { align-items: center; justify-content: center; background: rgba(30,40,60,.45); }
+.rec-box {
+  background: #fff; border-radius: 24px; padding: 20px; min-width: min(90vw, 420px);
+  display: flex; flex-direction: column; gap: 14px; align-items: center;
+}
+.rec-head { font-size: 40px; display: flex; align-items: center; gap: 12px; }
+.rec-head img { width: 64px; height: 64px; }
+.rec-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.rec-item { display: flex; gap: 6px; background: #F3F6FB; padding: 6px; border-radius: 999px; }
+.rec-meter { width: 100%; height: 18px; border-radius: 9px; background: #EEF2F8; overflow: hidden; }
+.rec-level { height: 100%; width: 0; background: var(--c-sound); transition: width 0.05s; }
+.rec-time { font-size: 22px; font-weight: 800; min-height: 28px; }
+.rec-main { width: 88px; height: 88px; font-size: 40px; }
+.rec-main.recording { background: #FFE8E8; animation: pulse 0.9s infinite; }
+
+/* ---------- pantallas generales ---------- */
+.screen {
+  height: 100%; overflow-y: auto; touch-action: pan-y;
+  padding: 16px 20px 40px;
+}
+.screen-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.screen-title { font-size: 30px; font-weight: 900; flex: 1; }
+
+/* ---------- fase 9: objetivos táctiles de 56 px ---------- */
+/* la barra mide 48 px (SPEC): el botón se ve de 44 px pero su área táctil llega a 56 */
+.tb-btn, .ct-btn, .proj-name, .palette-cat, .scene-thumb { position: relative; }
+.tb-btn::after, .ct-btn::after, .proj-name::after { content: ''; position: absolute; inset: -6px 0; }
+.palette-tabs { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.palette-cat { height: 48px; font-size: 22px; }
+.palette-cat::after { content: ''; position: absolute; inset: -4px 0; }
+.scene-thumb::after { content: ''; position: absolute; inset: 0 -2px; }
+.palette-list { padding-top: 8px; }
+.proj-name::after { inset: -8px 0; }
+.palette-list > * { flex-shrink: 0; }
+.rec-btn { min-height: 56px; }
