@@ -58,13 +58,19 @@ export function runGuide(steps: GuideStep[], onFinish: (skipped: boolean) => voi
       audio.tap();
       if (i < steps.length - 1) { i++; render(); } else finish(false);
     });
+    const say = document.createElement('button');
+    say.className = 'round-btn';
+    say.textContent = '🔊';
+    say.setAttribute('aria-label', 'leer en voz alta');
+    say.addEventListener('click', () => audio.speak(st.text));
     const skip = document.createElement('button');
     skip.className = 'round-btn no';
     skip.textContent = '✕';
     skip.setAttribute('aria-label', 'saltar guía');
     skip.addEventListener('click', () => { audio.tap(); finish(true); });
-    bubble.append(prev, next, skip);
+    bubble.append(say, prev, next, skip);
     place();
+    audio.autoSpeak(st.text);
   };
 
   const place = () => {
@@ -125,6 +131,7 @@ export function runGuide(steps: GuideStep[], onFinish: (skipped: boolean) => voi
       window.clearInterval(timer);
       window.removeEventListener('resize', place);
       layer.remove();
+      audio.stopSpeaking();
     },
   };
   render();

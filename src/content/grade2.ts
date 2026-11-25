@@ -37,7 +37,7 @@ export const GRADE2: Lesson[] = [
       { pic: '📨📩', text: 'con mensajes, un personaje avisa a otro de la misma página' },
       { pic: '⏳➡️📄', text: 'esperar un poco antes de pasar de página deja leer' },
     ],
-    challenge: 'historia de 4 páginas: cada página pasa a la siguiente y, en alguna, un personaje avisa a otro con un mensaje.',
+    challenge: 'historia de 4 páginas: cada página cuenta algo y pasa a la siguiente y, en alguna, un personaje avisa a otro con un mensaje.',
     introduces: ['onFlag', 'say', 'goPage', 'send', 'onMessage', 'wait'],
     guide: [
       { sel: '.scene-thumb[data-idx="0"]', text: 'en la página 1, la niña avisa al gato con «enviar»', icon: '📨' },
@@ -48,17 +48,17 @@ export const GRADE2: Lesson[] = [
       scene('parque', [spr('nina', 5, 10, [[b('onFlag'), b('say', 'había una vez…')]]), spr('gato', 14, 10)]),
       scene('bosque', [spr('perro', 8, 10, [[b('onFlag'), b('say', 'en el bosque…')]])]),
       scene('playa', [spr('nino', 10, 10, [[b('onFlag'), b('say', 'en la playa…')]])]),
-      scene('espacio', [spr('cohete', 10, 8, [[b('onFlag'), b('say', '¡y al espacio!')]])]),
+      scene('espacio', [spr('cohete', 10, 8)], [{ x: 10, y: 3, text: '¡y al espacio!' }]),
     ]),
     solution: (p) => {
-      append(p.scenes[0].sprites[0], [b('send', 1), b('wait', 20), b('goPage', 2)]);
-      addScript(p.scenes[0].sprites[1], [b('onMessage', 1), b('say', '¡voy!')]);
+      append(p.scenes[0].sprites[0], [b('send', 1)]);
+      addScript(p.scenes[0].sprites[1], [b('onMessage', 1), b('goPage', 2)]);
       append(p.scenes[1].sprites[0], [b('goPage', 3)]);
       append(p.scenes[2].sprites[0], [b('goPage', 4)]);
     },
     check: [
       cond('📄 la historia necesita 4 páginas', (p) => p.scenes.length >= 4),
-      cond('💬 en las 4 páginas alguien tiene que hablar', (p) => p.scenes.slice(0, 4).every((s) => s.sprites.some((sp) => scriptsOf(sp).some((sc) => has(sc, 'say'))))),
+      cond('💬 las 4 páginas tienen que contar algo: una burbuja o un texto', (p) => p.scenes.slice(0, 4).every((s) => s.texts.length > 0 || s.sprites.some((sp) => scriptsOf(sp).some((sc) => has(sc, 'say'))))),
       cond('➡️ la página 1 va a la 2, la 2 a la 3 y la 3 a la 4', (p) => pageGoes(p, 0, 2) && pageGoes(p, 1, 3) && pageGoes(p, 2, 4)),
       cond('📨📩 en alguna página un personaje envía un mensaje y otro de esa página lo recibe', (p) => p.scenes.some((s) => s.sprites.some((a) =>
         a.scripts.some((sc) => sends(sc).some((n) => s.sprites.some((o) => o !== a && o.scripts.some((r) => recv(r) === n))))))),
@@ -117,9 +117,12 @@ export const GRADE2: Lesson[] = [
       addScript(first(p, 'estrella'), [b('onBump', ''), b('say', '¡bravo!')]);
     },
     check: [
-      cond('🏠 si el gato choca con el árbol tiene que volver a casa', (p) => {
+      cond('🏠 al chocar con el árbol (elígelo en el bloque), y solo con él, el gato vuelve a casa', (p) => {
         const tree = kind(p, 'arbol')[0];
-        return kind(p, 'gato').some((s) => scriptsOf(s, 'onBump').some((sc) => (!sc.blocks[0].value || sc.blocks[0].value === tree?.id) && has(sc, 'home')));
+        return !!tree && kind(p, 'gato').some((s) => {
+          const homes = scriptsOf(s, 'onBump').filter((sc) => has(sc, 'home'));
+          return homes.length > 0 && homes.every((sc) => sc.blocks[0].value === tree.id);
+        });
       }),
       cond('⭐ el gato tiene que llegar a la estrella sin tocar el árbol', (p) => {
         const tree = kind(p, 'arbol')[0], star = kind(p, 'estrella')[0];
@@ -306,6 +309,8 @@ export const GRADE2: Lesson[] = [
   },
   {
     id: 'g2-10', track: 'grado2', num: 10, title: 'cadena de 6 mensajes', icon: '🔗', rubric: true,
+    // 6 envíos + 6 recepciones + 1 disparador ya son 13 bloques: aquí el tope de 12 no es posible
+    maxBlocks: 19,
     goals: [
       { pic: '🔴🟠🟡🟢🔵🟣', text: 'hay 6 colores de mensaje' },
       { pic: '📩⤴️📨', text: 'cada personaje recibe uno, salta y envía el siguiente' },

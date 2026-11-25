@@ -11,7 +11,7 @@ import { SPRITE_LIBRARY, BG_LIBRARY } from '../core/sprites';
 import { openPaint } from '../core/paint';
 import * as audio from '../core/audio';
 import * as db from '../core/db';
-import { pickChoice, askText, confirmBox, toast, fullscreenLayer } from './dialog';
+import { pickChoice, askText, confirmBox, toast, fullscreenLayer, requireOwnPress } from './dialog';
 import type { Choice } from './dialog';
 
 export interface EditorCtx {
@@ -85,9 +85,9 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
         <button class="tb-btn" id="btn-home" aria-label="inicio">🏠</button>
         <button class="tb-btn help" id="btn-help" aria-label="ayuda">❓</button>
       </header>
-      <div class="lesson-slot"></div>
       <div class="mid">
         <aside class="sprite-col" id="sprite-col"></aside>
+        <div class="lesson-slot"></div>
         <div class="stage-wrap" id="stage-wrap"><canvas id="stage"></canvas></div>
         <aside class="scene-col" id="scene-col"></aside>
       </div>
@@ -153,6 +153,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
       item.className = 'sprite-thumb' + (sp.id === store.spriteId ? ' active' : '') + (deleteSprite === sp.id ? ' deleting' : '');
       item.dataset.sid = sp.id;
       item.innerHTML = `<img alt="" src="${spriteThumb(sp.svg)}"><span class="st-name">${escapeHtml(sp.name)}</span>`;
+      requireOwnPress(item);
       const wasLong = longPress(item, () => { deleteSprite = sp.id; renderSprites(); });
       item.addEventListener('click', () => {
         if (wasLong()) return;
@@ -166,6 +167,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
         x.className = 'del-x';
         x.textContent = '✕';
         x.setAttribute('aria-label', 'borrar personaje');
+        requireOwnPress(x);
         x.addEventListener('click', (e) => {
           e.stopPropagation();
           audio.trash();
@@ -200,6 +202,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
       item.className = 'scene-thumb' + (i === store.sceneIndex ? ' active' : '');
       item.dataset.idx = String(i);
       item.innerHTML = `<img alt="" src="${spriteThumb(sc.bg)}"><span class="sc-num">${i + 1}</span>`;
+      requireOwnPress(item);
       const wasLong = longPress(item, () => { if (store.project.scenes.length > 1) { deleteScene = i; renderScenes(); } });
       item.addEventListener('click', () => {
         if (wasLong()) return;
@@ -212,6 +215,7 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
         x.className = 'del-x';
         x.textContent = '✕';
         x.setAttribute('aria-label', 'borrar escena');
+        requireOwnPress(x);
         x.addEventListener('click', (e) => {
           e.stopPropagation();
           audio.trash();
@@ -390,11 +394,17 @@ export function openEditor(app: HTMLElement, project: Project, opts: EditorOpts)
   // ---------- tamaño ----------
   const layout = () => {
     const vw = window.innerWidth, vh = window.innerHeight;
-    const slotH = root.querySelector<HTMLElement>('.lesson-slot')!.offsetHeight;
-    const availW = vw - 72 - 56 - 16;
+    const slot = root.querySelector<HTMLElement>('.lesson-slot')!;
+    // en pantallas anchas la barra de la lección va al lado del escenario; en estrechas, encima
+    const side = window.matchMedia('(min-width: 1000px)').matches;
+    const slotW = side && slot.offsetWidth ? slot.offsetWidth + 8 : 0;
+    const slotH = side ? 0 : slot.offsetHeight;
+    const availW = vw - 72 - 56 - 32 - slotW;
     // la zona de paleta + código se queda con al menos 280 px (2 filas de pestañas + bloques visibles)
     const availH = vh - 48 - slotH - 280 - 12;
-    const w = Math.max(240, Math.min(availW, (availH * 4) / 3));
+    // mínimo de 640 px siempre que la paleta y el código conserven al menos 230 px de alto
+    const floor = vh - 48 - slotH - 12 - 480 >= 230 ? 640 : 240;
+    const w = Math.max(240, Math.min(availW, Math.max(floor, (availH * 4) / 3)));
     stage.resize(w);
   };
   window.addEventListener('resize', layout);

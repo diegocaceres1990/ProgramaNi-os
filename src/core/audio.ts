@@ -16,7 +16,7 @@ export function isMuted(): boolean { return muted; }
 export function setMuted(m: boolean): void {
   muted = m;
   localStorage.setItem('aj-muted', m ? '1' : '0');
-  if (m) stopAllSounds();
+  if (m) { stopAllSounds(); stopSpeaking(); }
 }
 
 function tone(freq: number, dur: number, type: OscillatorType, vol: number, slideTo?: number, delay = 0): void {
@@ -130,4 +130,97 @@ export async function startRecording(maxSec = 10): Promise<Recording> {
     },
     done,
   };
+}
+
+// ---------------------------------------------------------------- lectura en voz alta
+
+const synth: SpeechSynthesis | null = typeof speechSynthesis !== 'undefined' ? speechSynthesis : null;
+let readAloud = localStorage.getItem('aj-voz') !== '0';
+let chosen: SpeechSynthesisVoice | null = null;
+
+/** ¿Se leen los textos automáticamente al aparecer? (por defecto sí) */
+export function isReadAloud(): boolean { return readAloud; }
+
+export function setReadAloud(on: boolean): void {
+  readAloud = on;
+  localStorage.setItem('aj-voz', on ? '1' : '0');
+  if (!on) stopSpeaking();
+}
+
+/**
+ * Elige la voz en español más natural disponible:
+ * 1) voces neuronales «Natural» (Edge), 2) voces de Google en línea (Chrome),
+ * 3) otras voces en línea, 4) cualquier voz local en español (reserva sin internet).
+ */
+export function pickVoice(): SpeechSynthesisVoice | null {
+  if (!synth) return null;
+  const es = synth.getVoices().filter((v) => v.lang.toLowerCase().startsWith('es'));
+  if (!es.length) return null;
+  const score = (v: SpeechSynthesisVoice) => {
+    const n = v.name.toLowerCase();
+    let s = 0;
+    if (n.includes('natural')) s += 100;
+    if (n.includes('google')) s += 80;
+    if (!v.localService) s += 30;
+    if (n.includes('online')) s += 20;
+    if (/es[-_](es|us|mx|419)/i.test(v.lang)) s += 5;
+    if (/es[-_]es/i.test(v.lang)) s += 2;
+    return s;
+  };
+  return [...es].sort((a, b) => score(b) - score(a))[0];
+}
+
+function refreshVoice(): void { chosen = pickVoice(); }
+if (synth) {
+  refreshVoice();
+  synth.addEventListener?.('voiceschanged', refreshVoice);
+}
+
+/** Nombre de la voz que se está usando (para el panel de padres). */
+export function voiceName(): string {
+  refreshVoice();
+  return chosen ? `${chosen.name} (${chosen.localService ? 'en este equipo' : 'por internet'})` : 'ninguna voz en español';
+}
+
+/** Quita emojis y símbolos para que la voz no los lea («flecha a la derecha», «estrella»…). */
+export function speakable(text: string): string {
+  return text
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}\u{1F1E6}-\u{1F1FF}]/gu, ' ')
+    .replace(/[↻↺◀▶✓✕✔✖#⏺⏹⏳♾]/g, ' ')
+    .replace(/[«»"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Lee un texto en voz alta (corta lo que se estuviera diciendo). Respeta el botón de silencio. */
+export function speak(text: string): void {
+  if (!synth || muted) return;
+  const clean = speakable(text);
+  if (!clean) return;
+  synth.cancel();
+  if (!chosen) refreshVoice();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = chosen?.lang ?? 'es-ES';
+  if (chosen) u.voice = chosen;
+  u.rate = 0.95;
+  u.pitch = 1.05;
+  // las voces en línea a veces fallan sin red: se reintenta una vez con una voz local
+  u.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled' || !chosen || chosen.localService) return;
+    const local = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith('es') && v.localService);
+    if (!local) return;
+    const r = new SpeechSynthesisUtterance(clean);
+    r.voice = local; r.lang = local.lang; r.rate = 0.95;
+    synth.speak(r);
+  };
+  synth.speak(u);
+}
+
+/** Lee solo si la lectura automática está activada. */
+export function autoSpeak(text: string): void {
+  if (readAloud) speak(text);
+}
+
+export function stopSpeaking(): void {
+  synth?.cancel();
 }

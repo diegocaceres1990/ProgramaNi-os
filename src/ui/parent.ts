@@ -59,9 +59,15 @@ export async function openParents(app: HTMLElement, onBack: () => void): Promise
         <div class="panel"><h2>⚙️ ajustes</h2><div class="row-actions">
           <button class="round-btn" id="par-unlock"></button>
           <button class="round-btn" id="par-mute"></button>
+          <button class="round-btn" id="par-voice"></button>
+          <button class="round-btn" id="par-voice-test">🗣️ probar la voz</button>
           <button class="round-btn no" id="par-reset">🔄 borrar estrellas</button>
           <button class="round-btn no" id="par-wipe">🗑️ borrar todos los datos</button>
         </div></div>
+        <div class="panel"><h2>🗣️ lectura en voz alta</h2>
+          <p>Lee la guía, los retos y las pistas. Cada texto tiene además un botón 🔊 para repetirlo.</p>
+          <p>Voz en uso: <b id="par-voice-name"></b>. Las voces por internet suenan más naturales; sin conexión se usa la voz instalada en el equipo.</p>
+        </div>
         <div class="panel"><h2>💾 datos</h2>
           <p>Proyectos guardados: <b>${projects.length}</b>. Todo se guarda solo en este dispositivo (IndexedDB), sin cuentas, sin nube y sin red.</p>
           <p>${est ? `Espacio usado: ${(est.usage / 1048576).toFixed(1)} MB de ${(est.quota / 1048576).toFixed(0)} MB.` : ''}</p>
@@ -91,6 +97,13 @@ export async function openParents(app: HTMLElement, onBack: () => void): Promise
     const mute = app.querySelector<HTMLElement>('#par-mute')!;
     mute.textContent = audio.isMuted() ? '🔇 sonido apagado' : '🔊 sonido encendido';
     mute.addEventListener('click', () => { audio.setMuted(!audio.isMuted()); audio.tap(); void render(); });
+    const voice = app.querySelector<HTMLElement>('#par-voice')!;
+    voice.textContent = audio.isReadAloud() ? '🗣️ lectura automática: sí' : '🤫 lectura automática: no';
+    voice.addEventListener('click', () => { audio.setReadAloud(!audio.isReadAloud()); audio.tap(); void render(); });
+    app.querySelector('#par-voice-test')!.addEventListener('click', () => audio.speak('¡Hola! Soy la voz que te ayudará a programar. ¿Empezamos?'));
+    const vn = app.querySelector<HTMLElement>('#par-voice-name')!;
+    vn.textContent = audio.voiceName();
+    setTimeout(() => { vn.textContent = audio.voiceName(); }, 800);
     app.querySelector('#par-reset')!.addEventListener('click', async () => {
       if (await confirmBox('¿Borrar todas las estrellas y tutoriales vistos?', '🔄')) { resetProgress(); void render(); }
     });

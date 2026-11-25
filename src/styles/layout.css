@@ -232,3 +232,13 @@
 .proj-name::after { inset: -8px 0; }
 .palette-list > * { flex-shrink: 0; }
 .rec-btn { min-height: 56px; }
+
+/* ---------- auditoría: áreas táctiles de 56 px sin recortes ---------- */
+.tb-btn::after { inset: -2px 0 -14px 0; }
+.topbar { position: relative; z-index: 6; }
+.proj-name::after { inset: -4px 0 -12px 0; }
+.palette-cat { height: 56px; }
+.palette-cat::after { content: none; }
+.scene-thumb { width: 56px; overflow: visible; }
+.scene-thumb img { border-radius: 10px; }
+.scene-thumb::after { content: none; }

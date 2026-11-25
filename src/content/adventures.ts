@@ -112,11 +112,18 @@ export const busySprites = (s: Scene, trig?: BlockType) =>
 export function squareChecks(key: string, who: string): Lesson['check'] {
   const target = (p: Project) => kind(p, key)[0];
   return [
-    cond(`🟦 ${who} necesita 4 bloques de mover y 4 de girar después de la bandera`, (p) => {
+    cond(`🟦 ${who} necesita justo 8 bloques después de la bandera: 4 de mover y 4 de girar`, (p) => {
       const sp = target(p);
       return !!sp && scriptsOf(sp, 'onFlag').some((sc) => {
         const a = actions(sc);
-        return a.filter((x) => MOVES.includes(x.type)).length >= 4 && a.filter((x) => TURNS.includes(x.type)).length >= 4;
+        return a.length === 8 && a.filter((x) => MOVES.includes(x.type)).length === 4 && a.filter((x) => TURNS.includes(x.type)).length === 4;
+      });
+    }),
+    cond('📏 un cuadrado tiene los 4 lados iguales: pon el mismo número en las 4 flechas', (p) => {
+      const sp = target(p);
+      return !!sp && scriptsOf(sp, 'onFlag').some((sc) => {
+        const sides = actions(sc).filter((x) => MOVES.includes(x.type)).map((x) => num(x, 1));
+        return sides.length === 4 && sides[0] > 0 && sides.every((n) => n === sides[0]);
       });
     }),
     cond('↗️ los 4 movimientos van en las 4 direcciones: derecha, arriba, izquierda y abajo', (p) => {

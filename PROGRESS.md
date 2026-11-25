@@ -162,7 +162,7 @@ Resultado: ningún bloque queda sin lección, así que no se quita ninguno de la
 - Sin probar con hardware real: micrófono y cámara físicos (se probaron con los dispositivos simulados de Chrome) y un iPad físico (se probó con emulación de Chrome).
 - Scripts de prueba (Node + Chrome por DevTools Protocol, sin dependencias): `engine-test.mjs`, `gate-f4.mjs`, `lessons-gate.mjs`, `audit.mjs` y `selftest.mjs`, en el scratchpad temporal de la sesión. No están en el repo porque la lista de archivos del SPEC es cerrada.
 
-## Revisión independiente (agente) y correcciones — sin commit todavía
+## Revisión independiente (agente) y correcciones
 Hallazgos verificados y corregidos:
 - Motor: dos scripts que mueven a la vez al mismo personaje se pisaban. Ahora se suman incrementos, con ajuste exacto al final de cada movimiento, e «ir a casa» cancela los movimientos en curso (el reinicio de g2-3 ya se ve).
 - Retos: se podían superar arrastrando al personaje. Ahora los personajes de partida de una lección no se arrastran y verify evalúa desde su posición inicial.
@@ -183,3 +183,24 @@ Regresión: motor 10/10 · autoprueba 44/44 · portón F4 15/15 · interfaz de l
 - Acceso directo en el escritorio «aprende jugando» → wscript lanzar.vbs. Arranca un servidor local oculto (Node, sin dependencias) en http://127.0.0.1:4747 y abre Chrome en modo app.
 - Copia de la app en %LOCALAPPDATA%\aprende-jugando\app. Para actualizarla tras cambiar el código: `npm run build` y volver a copiar dist/ ahí.
 - Prueba (Chrome headless contra el servidor instalado): 4/4 → responde, SW activo, contexto seguro (micro y cámara permitidos), y sigue abriendo con el servidor apagado.
+
+## Lectura en voz alta (petición del usuario)
+- src/core/audio.ts: elige la voz en español más natural disponible: «Natural» (Edge), después Google en línea (Chrome) y, como reserva sin conexión, la voz local de Windows. Quita emojis y símbolos antes de leer. Respeta el botón de silencio. Si la voz en línea falla, reintenta con la local.
+- Se lee automáticamente (desactivable en el panel de padres): la pantalla de objetivo (título, 3 viñetas, actividad sin pantalla y reto), cada paso de la guía, el reto al reabrir una lección, las pistas de reto fallido y la celebración. Cada texto tiene un botón 🔊 de 56 px para repetirlo.
+- Panel de padres: activar o desactivar la lectura automática, «probar la voz» y nombre de la voz en uso.
+- Prueba en Chrome (sin sonido por altavoces, espiando speechSynthesis): 12/12. Voz elegida en este equipo: «Google español» (por internet); disponibles también Helena, Laura y Pablo (locales) y Google es-US.
+- Regresión: portón F4 15/15 (dos pasadas; un fallo de cámara intermitente en la primera, no reproducido) · lecciones 13/13 · autoprueba 44/44 · motor 10/10. La copia instalada del escritorio está actualizada.
+
+## Auditoría QA (agente Opus) y correcciones
+El auditor informó 2 P0, 11 P1 y 9 P2 sobre el commit 7d8d659. Corregidos los 2 P0 y los P1 Q03-Q11:
+- Q01 (P0): al tocar con el dedo, la rueda numérica se cerraba sola. Los diálogos ignoran los clics que no empezaron con una pulsación sobre ellos.
+- Q02 (P0): la pulsación larga borraba al soltar el dedo. Mismo arreglo en miniaturas, «x» y galería.
+- Q03 imán de 20 px (y ahora encaja bien junto a bucles). Q04 escenario de 640 px; la barra del reto va al lado del escenario (arriba en pantallas de menos de 1000 px).
+- Q05 texto de 16 px. Q06 «decir» sin teclado. Q07 y Q11 zonas táctiles de 56 px (asa de bucles, barra superior, escenas, pestañas, barra del reto).
+- Q08 cuadrado: justo 8 bloques y 4 lados iguales. Q09 laberinto: «ir a casa» solo al chocar con el árbol.
+- Q10: el tope de 12 cuenta la solución completa. 2º-1 ajustada. 2º-10 (6 mensajes encadenados) es la única excepción: necesita al menos 13 bloques; su solución usa 19.
+- Pendientes: los 9 P2 (Q12-Q19 y notas documentales).
+- Contrapartida de Q04: en pantallas de unos 784 px de alto, la lista de la paleta muestra alrededor de 1,5 bloques sin desplazar.
+
+Pruebas tras corregir: fallos de la auditoría reproducidos con toques 16/16 (4 pasadas) · portón F4 15/15 · lecciones 13/13 · voz 12/12 · tamaños 17/17 · autoprueba 44/44 · motor 10/10.
+Nota de las pruebas: si el dedo simulado soltaba el bloque en pleno movimiento, Chrome usaba el toque siguiente para frenar el deslizamiento y no generaba clic. Soltando el dedo quieto no ocurre. Falta comprobarlo en un dispositivo táctil físico.

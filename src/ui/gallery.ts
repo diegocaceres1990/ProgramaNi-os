@@ -4,7 +4,7 @@ import * as audio from '../core/audio';
 import { TRACKS, totalStars } from '../core/progress';
 import type { TrackId } from '../core/progress';
 import { escapeHtml } from '../core/blocks';
-import { askText, confirmBox } from './dialog';
+import { askText, confirmBox, requireOwnPress } from './dialog';
 
 export interface GalleryNav {
   openProject(id: string): void;
@@ -126,6 +126,7 @@ export async function showGallery(app: HTMLElement, nav: GalleryNav): Promise<vo
       ok.textContent = '✓';
       ok.setAttribute('aria-label', 'listo');
       ok.addEventListener('click', (e) => { e.stopPropagation(); tile.classList.remove('editing'); });
+      [ren, del, ok].forEach(requireOwnPress);
       tools.append(ren, del, ok);
       tile.appendChild(tools);
       grid.appendChild(tile);

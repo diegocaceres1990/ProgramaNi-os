@@ -178,3 +178,24 @@
 /* ---------- fase 9: tamaños ---------- */
 .lb-btn { position: relative; }
 .lb-btn::after { content: ''; position: absolute; inset: -4px 0; }
+
+/* ---------- barra de la lección en el lateral ---------- */
+.lesson-slot { flex: 0 0 220px; position: relative; align-self: stretch; }
+.lesson-bar {
+  position: absolute; inset: 0; overflow-y: auto; touch-action: pan-y;
+  flex-wrap: wrap; align-content: flex-start; gap: 8px;
+  border-bottom: none; border-radius: var(--radius); padding: 10px;
+}
+.lb-icon { flex: 0 0 100%; text-align: center; }
+.lb-text { flex: 0 0 100%; font-size: 17px; }
+.lb-btn { flex: 1 1 56px; height: 56px; padding: 0; }
+.lb-check { padding: 0; }
+.lb-btn::after { content: none; }
+@media (max-width: 999px) {
+  .mid { flex-wrap: wrap; }
+  .lesson-slot { order: -1; flex: 0 0 100%; }
+  .lesson-bar { position: static; flex-wrap: nowrap; align-items: center; }
+  .lb-icon { flex: 0 0 auto; }
+  .lb-text { flex: 1 1 auto; }
+  .lb-btn { flex: 0 0 56px; }
+}

@@ -80,6 +80,7 @@ export function showIntro(app: HTMLElement, l: Lesson, nav: TrackNav): void {
       <div class="screen-head">
         <button class="round-btn" id="intro-back" aria-label="volver">⬅️</button>
         <span class="tb-gap"></span>
+        <button class="round-btn" id="intro-say" aria-label="leer en voz alta">🔊</button>
         <button class="round-btn" id="intro-reset" aria-label="empezar de cero" style="display:none">🔄</button>
       </div>
       <div class="intro">
@@ -110,7 +111,15 @@ export function showIntro(app: HTMLElement, l: Lesson, nav: TrackNav): void {
   }
   (app.querySelector('.cc-text') as HTMLElement).textContent = l.challenge;
   app.querySelector('#intro-back')!.addEventListener('click', () => { audio.tap(); showTrack(app, l.track, nav); });
-  app.querySelector('#intro-go')!.addEventListener('click', () => { audio.tap(); void startLesson(app, l, nav); });
+  app.querySelector('#intro-go')!.addEventListener('click', () => { audio.tap(); audio.stopSpeaking(); void startLesson(app, l, nav); });
+  const introText = [
+    `${l.title}.`,
+    ...l.goals.map((g, i) => `${i + 1}: ${g.text}.`),
+    l.unplugged ? `Antes, sin pantalla: ${l.unplugged.title}. ${l.unplugged.steps.join('. ')}.` : '',
+    `El reto: ${l.challenge}`,
+  ].join(' ');
+  app.querySelector('#intro-say')!.addEventListener('click', () => audio.speak(introText));
+  audio.autoSpeak(introText);
   const reset = app.querySelector<HTMLElement>('#intro-reset')!;
   void db.loadProject('lesson-' + l.id).then((saved) => {
     if (!saved) return;
@@ -145,17 +154,20 @@ export async function startLesson(app: HTMLElement, l: Lesson, nav: TrackNav): P
       const bar = document.createElement('div');
       bar.className = 'lesson-bar';
       bar.innerHTML = `<span class="lb-icon">🎯</span><span class="lb-text"></span>
+        <button class="lb-btn" data-act="say" aria-label="leer el reto">🔊</button>
         <button class="lb-btn" data-act="guide" aria-label="ver la guía">👣</button>
         <button class="lb-btn lb-check" data-act="check" aria-label="comprobar">✓</button>`;
       (bar.querySelector('.lb-text') as HTMLElement).textContent = l.challenge;
       ctx.slot.appendChild(bar);
+      bar.querySelector('[data-act="say"]')!.addEventListener('click', () => audio.speak(l.challenge));
       bar.querySelector('[data-act="guide"]')!.addEventListener('click', () => { audio.tap(); guide?.close(); guide = runGuide(l.guide, () => undefined); });
       bar.querySelector('[data-act="check"]')!.addEventListener('click', async () => {
         await ctx.save();
         const res = evaluate(l, store.project);
         if (!res.ok) {
           audio.oops();
-          toast(`<span class="big">💡</span> ${res.hint}`, 5000);
+          toast(`<span class="big">💡</span> ${res.hint}`, 6000);
+          audio.autoSpeak(res.hint);
           return;
         }
         guide?.close();
@@ -171,6 +183,7 @@ export async function startLesson(app: HTMLElement, l: Lesson, nav: TrackNav): P
         });
       });
       if (fresh) guide = runGuide(l.guide, () => undefined);
+      else audio.autoSpeak(l.challenge);
       const origClose = ctx.close;
       ctx.close = () => { guide?.close(); origClose(); };
     },
@@ -190,6 +203,7 @@ function celebrate(l: Lesson, rubric: { label: string; ok: boolean }[] | undefin
       </div>
     </div>`;
   (root.querySelector('.dlg-msg') as HTMLElement).textContent = `¡reto superado! ${l.icon} ${l.title}`;
+  setTimeout(() => audio.autoSpeak(`¡Reto superado! Tres estrellas.`), 900);
   const rb = root.querySelector<HTMLElement>('.rubric')!;
   for (const r of rubric ?? []) {
     const d = document.createElement('div');

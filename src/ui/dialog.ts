@@ -9,9 +9,24 @@ export interface Choice<T> {
   color?: string;
 }
 
+/**
+ * Ignora los clics que no empezaron con una pulsación sobre este mismo elemento: al abrirse algo
+ * bajo el dedo, el clic que el navegador genera al levantarlo no debe activarlo.
+ * (Los clics por teclado o por código, con detail 0, sí pasan.)
+ */
+export function requireOwnPress(el: HTMLElement): void {
+  let pressed = false;
+  el.addEventListener('pointerdown', () => { pressed = true; }, true);
+  el.addEventListener('click', (e) => {
+    if (!pressed && e.detail !== 0) { e.stopImmediatePropagation(); e.preventDefault(); }
+    pressed = false;
+  }, true);
+}
+
 function overlay(cls = ''): { root: HTMLElement; box: HTMLElement; close: () => void } {
   const root = document.createElement('div');
   root.className = 'dlg-overlay ' + cls;
+  requireOwnPress(root);
   const box = document.createElement('div');
   box.className = 'dlg-box';
   root.appendChild(box);

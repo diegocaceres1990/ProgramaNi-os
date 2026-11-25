@@ -28,7 +28,7 @@ export const CATEGORIES: { id: Category; color: string; dark: string; icon: stri
 export const MSG_COLORS = ['#FF4C4C', '#FF8C1A', '#FFD23F', '#4CBF56', '#4C97FF', '#9966FF'];
 
 export const BLOCKS: BlockDef[] = [
-  { type: 'onFlag', cat: 'start', icon: '🚩', label: 'al pulsar la bandera', trigger: true },
+  { type: 'onFlag', cat: 'start', icon: '🚩', label: 'bandera verde', trigger: true },
   { type: 'onTap', cat: 'start', icon: '👆', label: 'al tocarme', trigger: true },
   { type: 'onBump', cat: 'start', icon: '💥', label: 'al chocar con', trigger: true, value: { kind: 'sprite', def: '' } },
   { type: 'onMessage', cat: 'start', icon: '📩', label: 'al recibir', trigger: true, value: { kind: 'msg', def: 1 } },

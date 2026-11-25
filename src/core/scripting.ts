@@ -5,12 +5,12 @@ import type { Block, BlockType, Script, Sprite } from './state';
 import { def, blockEl, newBlock, valueHtml, SPEEDS, SAY_PRESETS, MSG_COLORS, spriteThumb, escapeHtml } from './blocks';
 import { TRIGGERS } from './engine';
 import * as audio from './audio';
-import { pickNumber, pickChoice, askText, toast } from '../ui/dialog';
+import { pickNumber, pickChoice, toast } from '../ui/dialog';
 import type { Choice } from '../ui/dialog';
 
 /** Radio del imán (px de pantalla) desde el borde del bloque arrastrado. */
 export const IMAN = 20;
-const SNAP_DIST = IMAN * 2;
+const SNAP_DIST = IMAN;
 const DRAG_THRESHOLD = 6;
 
 interface Target { sid: string; cont: string; before: string | null; x: number; y: number }
@@ -280,7 +280,6 @@ export class CodeArea {
       const kids = [...ch.children].filter((c): c is HTMLElement => c instanceof HTMLElement && !!c.dataset.bid && !excluded.has(c.dataset.bid));
       const types = kids.map((k) => this.locs.get(k.dataset.bid ?? '')?.block.type).filter((t): t is BlockType => !!t);
       const cr = ch.getBoundingClientRect();
-      const cy = cr.top + Math.min(cr.height, 56) / 2;
       const lastTerm = types.length > 0 && isTerminal(types[types.length - 1]);
       for (let i = 0; i <= kids.length; i++) {
         // reglas de encaje
@@ -291,7 +290,9 @@ export class CodeArea {
         if (tailTerm && (!isTop || i !== kids.length)) continue;
         const x = i < kids.length ? kids[i].getBoundingClientRect().left : kids.length ? kids[kids.length - 1].getBoundingClientRect().right : cr.left;
         const before = i < kids.length ? (kids[i].dataset.bid ?? null) : null;
-        out.push({ sid, cont, before, x, y: cy });
+        const ref = kids[Math.min(i, kids.length - 1)];
+        const y = ref ? ref.getBoundingClientRect().bottom - 28 : cr.top + cr.height / 2;
+        out.push({ sid, cont, before, x, y });
       }
     });
     return out;
@@ -303,7 +304,7 @@ export class CodeArea {
     const gx = x - d.offX, gy = y - d.offY;
     d.ghost.style.transform = `translate(${gx}px, ${gy}px)`;
     const gr = d.ghost.getBoundingClientRect();
-    const leftX = gx, rightX = gx + gr.width, midY = gy + 28;
+    const leftX = gx, rightX = gx + gr.width, midY = gy + gr.height - 28;
     let best: Target | null = null;
     let bestD = Infinity;
     for (const t of d.targets) {
@@ -443,10 +444,7 @@ export class CodeArea {
       }
       case 'text': {
         const ch: Choice<string>[] = SAY_PRESETS.map((t) => ({ value: t, label: t }));
-        ch.push({ value: '__custom', icon: '✏️' });
-        const pick = await pickChoice(ch, '💬', 'say-picker');
-        if (pick === '__custom') res = (await askText('💬', String(cur), 30)) || null;
-        else res = pick;
+        res = await pickChoice(ch, '💬', 'say-picker');
         break;
       }
     }

@@ -37,6 +37,8 @@ export interface Lesson {
   /** Aplica la solución de referencia sobre el estado inicial (≤ 12 bloques). */
   solution: (p: Project) => void;
   check: Cond[];
+  /** Tope de bloques de la solución de referencia (12 salvo que el reto lo haga imposible). */
+  maxBlocks?: number;
   /** Muestra la rúbrica común (proyectos de cuaderno). */
   rubric?: boolean;
   /** Proyecto libre: la rúbrica es más exigente (3 colores, idea contada con texto o burbujas). */
@@ -298,6 +300,7 @@ export function evaluate(lesson: EvalTarget, project: Project): CheckResult {
  * Comprueba todo el temario: 3 viñetas, retos con texto único, el estado inicial NO supera el reto,
  * la solución de referencia SÍ lo supera, la solución usa ≤ 12 bloques nuevos y solo bloques ya
  * introducidos en su itinerario.
+ * El tope cuenta todos los bloques de la solución, incluidos los del estado inicial.
  */
 export function selfTest(lessons: Lesson[]): { passed: number; errors: string[] } {
   const errors: string[] = [];
@@ -321,8 +324,9 @@ export function selfTest(lessons: Lesson[]): { passed: number; errors: string[] 
     // los bloques del estado inicial se clonan con ids nuevos para no compartir referencias
     for (const sp of allSprites(solved)) for (const sc of sp.scripts) sc.blocks = cloneBlocks(sc.blocks);
     l.solution(solved);
-    const added = countBlocks(solved) - countBlocks(start);
-    if (added > 12) errs.push(`la solución usa ${added} bloques (> 12)`);
+    const total = countBlocks(solved);
+    const max = l.maxBlocks ?? 12;
+    if (total > max) errs.push(`la solución usa ${total} bloques (> ${max})`);
     const r = evaluate(l, solved);
     if (!r.ok) errs.push(`la solución no supera el reto: ${r.hint}`);
     for (const t of blockTypes(solved)) if (!known.has(t)) errs.push(`usa "${t}" antes de enseñarlo`);
